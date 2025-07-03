@@ -1,12 +1,12 @@
-import:py logging;
-import:py traceback;
-import:py from logging { Logger }
-import:jac from jivas.agent.core.agent { Agent }
-import:jac from jivas.agent.action.interact_action { InteractAction }
-import:jac from actions.jivas.langchain_model_action.langchain_model_action { LangChainModelAction }
-import:jac from jivas.agent.action.model_action { ModelAction, ModelActionResult }
+import logging;
+import traceback;
+import from logging { Logger }
+import from jivas.agent.core.agent { Agent }
+import from jivas.agent.action.interact_action { InteractAction }
+import from actions.jivas.langchain_model_action.langchain_model_action { LangChainModelAction }
+import from jivas.agent.action.model_action { ModelAction, ModelActionResult }
 
-node UserModelInteractAction :InteractAction: {
+node UserModelInteractAction(InteractAction) {
     # maintains a descript, conceptual understanding of the user by monitoring conversational exchanges; may be utilized by other actions which adapt the system to user's specific needs.
     # always ensure that this is registered before the final response is generated
 
@@ -32,7 +32,7 @@ node UserModelInteractAction :InteractAction: {
     has model_temperature:float = 0.3;
     has model_max_tokens:int = 2048;
 
-    can touch(visitor: interact_graph_walker) -> bool {
+    def touch(visitor: interact_graph_walker) -> bool {
 
         if (visitor.utterance) {
             return True;
@@ -40,7 +40,7 @@ node UserModelInteractAction :InteractAction: {
         return False;
     }
 
-    can execute(visitor: interact_graph_walker) -> dict {
+    def execute(visitor: interact_graph_walker) -> None {
 
         # if no user model, let's use the user_model_template as a start...
         if( not (user_model := visitor.frame_node.variable_get(key = "user_model")) ) {
@@ -68,11 +68,9 @@ node UserModelInteractAction :InteractAction: {
             if( model_action_result := model_action.call_model(
                 prompt_messages = prompt_messages,
                 prompt_variables = prompt_variables,
-                kwargs = {
-                    "model_name": self.model_name,
-                    "model_temperature": self.model_temperature,
-                    "model_max_tokens": self.model_max_tokens
-                },
+                model_name = self.model_name,
+                model_temperature = self.model_temperature,
+                model_max_tokens = self.model_max_tokens,
                 interaction_node = visitor.interaction_node
             )) {
                 # update the user model in the session...
@@ -82,11 +80,10 @@ node UserModelInteractAction :InteractAction: {
             }
         }
 
-        return visitor.export();
     }
 
 
-    can healthcheck() -> bool {
+    def healthcheck() -> bool {
         try {
             if(
                 self.prompt and

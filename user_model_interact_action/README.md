@@ -29,12 +29,12 @@ JIVAS action for maintaining a conceptual user model by monitoring conversationa
 
 ## Dependencies
 
-- **Jivas:** `^2.0.0`
+- **Jivas:** `^2.1.0`
 - **Actions:**
-  - `jivas/persona_interact_action`: `^0.0.1`
-  - `jivas/langchain_model_action`: `^0.0.1`
+  - `jivas/persona_interact_action`: `^0.1.0`
+  - `jivas/langchain_model_action`: `^0.1.0`
 
-This package, developed by V75 Inc., is designed to develop and maintain a conceptual understanding of the user by monitoring conversational exchanges. As a core interact action, it plays a critical role in personalizing and adapting the system to meet the user's specific needs. Configured as a singleton, the package requires the Jivas library version 2.0.0 and depends on the `persona_interact_action` and `langchain_model_action` for effective operation.
+This package, developed by V75 Inc., is designed to develop and maintain a conceptual understanding of the user by monitoring conversational exchanges. As a core interact action, it plays a critical role in personalizing and adapting the system to meet the user's specific needs. Configured as a singleton, the package requires the Jivas library version 2.1.0 and depends on the `persona_interact_action` and `langchain_model_action` for effective operation.
 
 ---
 
