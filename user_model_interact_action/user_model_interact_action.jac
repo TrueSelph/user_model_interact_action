@@ -52,7 +52,7 @@ node UserModelInteractAction(InteractAction) {
             "anchors": self.anchors,
             "user_model": user_model
         };
-        
+
         # prepare the prompt with utterance
         prompt_messages = [
             {"system": self.prompt},
