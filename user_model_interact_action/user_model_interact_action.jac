@@ -1,12 +1,12 @@
-import:py logging;
-import:py traceback;
-import:py from logging { Logger }
-import:jac from jivas.agent.core.agent { Agent }
-import:jac from jivas.agent.action.interact_action { InteractAction }
-import:jac from actions.jivas.langchain_model_action.langchain_model_action { LangChainModelAction }
-import:jac from jivas.agent.action.model_action { ModelAction, ModelActionResult }
+import logging;
+import traceback;
+import from logging { Logger }
+import from jivas.agent.core.agent { Agent }
+import from jivas.agent.action.interact_action { InteractAction }
+import from actions.jivas.langchain_model_action.langchain_model_action { LangChainModelAction }
+import from jivas.agent.action.model_action { ModelAction, ModelActionResult }
 
-node UserModelInteractAction :InteractAction: {
+node UserModelInteractAction(InteractAction) {
     # maintains a descript, conceptual understanding of the user by monitoring conversational exchanges; may be utilized by other actions which adapt the system to user's specific needs.
     # always ensure that this is registered before the final response is generated
 
@@ -32,7 +32,7 @@ node UserModelInteractAction :InteractAction: {
     has model_temperature:float = 0.3;
     has model_max_tokens:int = 2048;
 
-    can touch(visitor: interact_graph_walker) -> bool {
+    def touch(visitor: agent_graph_walker) -> bool {
 
         if (visitor.utterance) {
             return True;
@@ -40,10 +40,10 @@ node UserModelInteractAction :InteractAction: {
         return False;
     }
 
-    can execute(visitor: interact_graph_walker) -> dict {
+    def execute(visitor: agent_graph_walker) -> None {
 
         # if no user model, let's use the user_model_template as a start...
-        if( not (user_model := visitor.frame_node.variable_get(key = "user_model")) ) {
+        if( not (user_model := visitor.frame_node.data_get(key = "user_model")) ) {
             user_model = self.user_model_template;
         }
 
@@ -53,40 +53,43 @@ node UserModelInteractAction :InteractAction: {
             "user_model": user_model
         };
 
+        # prepare the prompt with utterance
+        prompt_messages = [
+            {"system": self.prompt},
+            {"human": "{utterance}"}
+        ];
+
         if (self.history) {
             # grab the history
             statements = visitor.frame_node.get_transcript_statements(interactions = self.history_size, max_statement_length = self.max_statement_length);
-            prompt_variables.update({"history": statements});
+            if (statements) {
+                # prepend statements to the prompt messages
+                prompt_messages = statements + prompt_messages;
+            }
         }
 
-        prompt_messages = [
-            {"system": self.prompt}
-        ];
 
         if(model_action := self.get_agent().get_actions().get(action_label=self.model_action)) {
 
             if( model_action_result := model_action.call_model(
                 prompt_messages = prompt_messages,
                 prompt_variables = prompt_variables,
-                kwargs = {
-                    "model_name": self.model_name,
-                    "model_temperature": self.model_temperature,
-                    "model_max_tokens": self.model_max_tokens
-                },
+                model_name = self.model_name,
+                model_temperature = self.model_temperature,
+                model_max_tokens = self.model_max_tokens,
                 interaction_node = visitor.interaction_node
             )) {
                 # update the user model in the session...
                 if(updated_model := model_action_result.get_result()) {
-                    visitor.frame_node.variable_set(key = "user_model", value = updated_model);
+                    visitor.frame_node.data_set(key = "user_model", value = updated_model);
                 }
             }
         }
 
-        return visitor.export();
     }
 
 
-    can healthcheck() -> bool {
+    def healthcheck() -> bool {
         try {
             if(
                 self.prompt and
